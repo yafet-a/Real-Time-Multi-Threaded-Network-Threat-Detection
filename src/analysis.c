@@ -45,15 +45,6 @@ void analyse(struct pcap_pkthdr *header,
               const unsigned char *packet,
               int verbose) {
 
-                src_ip.s_addr = ip_hdr->saddr;
-                dst_ip.s_addr = ip_hdr->daddr;
-
-            if (ip_list == NULL){
-                exit(EXIT_FAILURE);
-            }  
-
-
-
     // Typecast packet contents to ether_header struct
     struct ether_header *eth_hdr = (struct ether_header *)packet;
 
@@ -63,89 +54,83 @@ void analyse(struct pcap_pkthdr *header,
         // Typecast packet contents to iphdr struct (after skipping over the ethernet header)
         struct iphdr *ip_hdr = (struct iphdr *)(packet + sizeof(struct ether_header));
 
+        src_ip.s_addr = ip_hdr->saddr;
+        dst_ip.s_addr = ip_hdr->daddr;
+
         // Check if packet is a TCP packet
         if (ip_hdr->protocol == IPPROTO_TCP) {
 
             struct tcphdr *tcp_hdr = (struct tcphdr *)(packet + sizeof(struct ether_header) +
                                                         sizeof(struct iphdr));
 
-            //Check port 80 for urls
-            if(tcp_hdr->dest == htons(80)) {
-                
-
-
-
-
+            // Check port 80 for URLs
+            if (tcp_hdr->dest == htons(80)) {
 
                 // HTTP packet
-                char* payload = (char*)(packet + sizeof(eth_hdr) + 
-                            sizeof(ip_hdr) + sizeof(tcp_hdr));
+                char *payload = (char *)(packet + sizeof(eth_hdr) +
+                                         sizeof(ip_hdr) + sizeof(tcp_hdr));
 
-                if(strstr(payload, "Host: www.google.co.uk")) { 
+                if (strstr(payload, "Host: www.google.co.uk")) {
                     printf("Blacklisted URL: google\n");
-                    google_count++;            
-                }
-
-                else if (strstr(payload, "www.bbc.co.uk")) {
+                    google_count++;
+                } else if (strstr(payload, "www.bbc.co.uk")) {
                     printf("Blacklisted URL: bbc\n");
                     bbc_count++;
-    }
+                }
             }
 
-                        // Check if packet is a SYN packet
-                        if (tcp_hdr->syn == 1 && tcp_hdr->ack == 0) {
-                            src_ip.s_addr = ip_hdr->saddr;
-                    
-
-                            int found = 0;
-                            for (int i = 0; i < ip_count; i++) {
-                                if (ip_list[i].ip.s_addr == ip_hdr->saddr) {
-                                    found = 1;
-                                    // Increment count for existing IP
-                                    ip_list[i].count++;
-                                    break;
-                                }
-                            }
-
-                            if (!found) {
-                                // Add new IP
-                                if (ip_count < capacity) {
-                                    ip_list[ip_count].ip.s_addr = ip_hdr->saddr;
-                                    ip_list[ip_count].count = 1;
-                                    ip_count++;
-                                } 
-                                else {
-                                    // Expand the array if needed
-                                    capacity *= 2;
-                                    //allocate new array with double capacity
-                                    struct ip_address* new_ip_list = realloc(ip_list, capacity*sizeof(struct ip_address));
-
-                                    if (new_ip_list == NULL) {
-                                        // Handle memory allocation failure
-                                        exit(EXIT_FAILURE);
-                                    }
-
-                                    ip_list = new_ip_list;
-
-                                    // Add new IP
-                                    ip_list[ip_count].ip.s_addr = ip_hdr->saddr;
-                                    ip_list[ip_count].count = 1;
-                                    ip_count++;
-                                }
-                            }
-                        }
+            // Check if packet is a SYN packet
+            if (tcp_hdr->syn == 1 && tcp_hdr->ack == 0) {
+                int found = 0;
+                for (int i = 0; i < ip_count; i++) {
+                    if (ip_list[i].ip.s_addr == ip_hdr->saddr) {
+                        found = 1;
+                        // Increment count for existing IP
+                        ip_list[i].count++;
+                        break;
                     }
-                } else if (ntohs(eth_hdr->ether_type) == ETHERTYPE_ARP) {
-                    struct ether_arp *arp_hdr = (struct ether_arp *)(packet + sizeof(struct ether_header));
+                }
 
-                    if (ntohs(arp_hdr->ea_hdr.ar_op) == ARPOP_REPLY) {
-                        arp_responses++;
+                if (!found) {
+                    // Add new IP
+                    if (ip_count < capacity) {
+                        ip_list[ip_count].ip.s_addr = ip_hdr->saddr;
+                        ip_list[ip_count].count = 1;
+                        ip_count++;
+                    } else {
+                        // Expand the array if needed
+                        capacity *= 2;
+                        // allocate new array with double capacity
+                        struct ip_address *new_ip_list = realloc(ip_list, capacity * sizeof(struct ip_address));
+
+                        if (new_ip_list == NULL) {
+                            // Handle memory allocation failure
+                            exit(EXIT_FAILURE);
+                        }
+
+                        ip_list = new_ip_list;
+
+                        // Add new IP
+                        ip_list[ip_count].ip.s_addr = ip_hdr->saddr;
+                        ip_list[ip_count].count = 1;
+                        ip_count++;
                     }
                 }
             }
+        }
+    } else if (ntohs(eth_hdr->ether_type) == ETHERTYPE_ARP) {
+        struct ether_arp *arp_hdr = (struct ether_arp *)(packet + sizeof(struct ether_header));
+
+        if (ntohs(arp_hdr->ea_hdr.ar_op) == ARPOP_REPLY) {
+            arp_responses++;
+        }
+    }
+}
+
 
 // Print summary of SYN flood attack
 void print_syn_summary() {
+    int total_vios = bbc_count + google_count;
     int total_syn = 0;
     int unique_ips = 0;
 
@@ -162,7 +147,8 @@ void print_syn_summary() {
     printf("Total SYN Packets: %d\n", total_syn);
     printf("Unique Source IPs: %d\n", unique_ips);
     printf("ARP Responses: %d (cache poisoning)\n", arp_responses);  
-    printf("Source IP: %s\n", inet_ntoa(src_ip));    
+    printf("Source IP: %s\n", inet_ntoa(src_ip));  
+    printf("%d URL blacklist violations (%d google, %d bbc)\n", total_vios, google_count, bbc_count);
     printf("==============================\n");
 
 }
