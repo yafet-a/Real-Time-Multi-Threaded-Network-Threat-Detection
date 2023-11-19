@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
   // Print out settings
   printf("%s invoked. Settings:\n", argv[0]);
   printf("\tInterface: %s\n\tVerbose: %d\n", args.interface, args.verbose);
+  init();
   // Invoke Intrusion Detection System
   sniff(args.interface, args.verbose);
   return 0;
