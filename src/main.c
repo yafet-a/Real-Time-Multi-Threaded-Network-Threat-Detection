@@ -28,20 +28,20 @@ void print_usage(char *progname) {
 }
 
 // Declare the function to avoid implicit declaration warning
-void print_syn_summary(void);
+// void print_syn_summary(void);
 
 // Signal handler 
-void sigint_handler(int signum) {
-  print_syn_summary();
-  exit(0);
-}
+// void sigint_handler(int signum) {
+//   print_syn_summary();
+//   exit(0);
+// }
 
 int main(int argc, char *argv[]) {
   // Parse command line arguments
   struct arguments args = {"eth0", 0}; // Default values
   int optc;
   // Register signal handler
-  signal(SIGINT, sigint_handler);
+  // signal(SIGINT, sigint_handler);
 
   while ((optc = getopt_long(argc, argv, OPTSTRING, long_opts, NULL)) != EOF) {
     switch (optc) {
@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
   // Print out settings
   printf("%s invoked. Settings:\n", argv[0]);
   printf("\tInterface: %s\n\tVerbose: %d\n", args.interface, args.verbose);
-  init();
   // Invoke Intrusion Detection System
   sniff(args.interface, args.verbose);
   return 0;

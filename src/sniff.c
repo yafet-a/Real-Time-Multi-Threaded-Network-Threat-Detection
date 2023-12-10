@@ -1,15 +1,38 @@
 #include "sniff.h"
-
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
 #include <netinet/if_ether.h>
-
+#include "analysis.h"
 #include "dispatch.h"
 
 
+
+void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+
+  int verbose = *(int*)args;
+  
+  if(verbose) {
+    dump(packet, header->len);
+  }
+
+  dispatch(header, packet, verbose);  
+}
+
+void print_syn_summary(void);
+
+// Signal handler 
+void sigint_handler(int signum) {
+  print_syn_summary();
+  exit(0);
+}
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
+  
+  // Register signal handler
+  signal(SIGINT, sigint_handler);
+  init_ip_list();
   
   char errbuf[PCAP_ERRBUF_SIZE];
 
@@ -24,31 +47,41 @@ void sniff(char *interface, int verbose) {
   }
   
   
-  struct pcap_pkthdr header;
-  const unsigned char *packet;
+  // struct pcap_pkthdr header;
+  // const unsigned char *packet;
 
   // Capture packet one packet everytime the loop runs using pcap_next(). This is inefficient.
   // A more efficient way to capture packets is to use use pcap_loop() instead of pcap_next().
   // See the man pages of both pcap_loop() and pcap_next().
 
-  while (1) {
-    // Capture a  packet
-    packet = pcap_next(pcap_handle, &header);
-    if (packet == NULL) {
-      // pcap_next can return null if no packet is seen within a timeout
-      if (verbose) {
-        printf("No packet received. %s\n", pcap_geterr(pcap_handle));
-      }
-    } else {
-      // If verbose is set to 1, dump raw packet to terminal
-      if (verbose) {
-        dump(packet, header.len);
-      }
-      // Dispatch packet for processing
-      dispatch(&header, packet, verbose);
-    }
+  int ret;
+  ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
+  if (ret < 0) {
+    fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
+    exit(1);
   }
+
 }
+
+//old using pcap_next
+//   while (1) {
+//     // Capture a  packet
+//     packet = pcap_next(pcap_handle, &header);
+//     if (packet == NULL) {
+//       // pcap_next can return null if no packet is seen within a timeout
+//       if (verbose) {
+//         printf("No packet received. %s\n", pcap_geterr(pcap_handle));
+//       }
+//     } else {
+//       // If verbose is set to 1, dump raw packet to terminal
+//       if (verbose) {
+//         dump(packet, header.len);
+//       }
+//       // Dispatch packet for processing
+//       dispatch(&header, packet, verbose);
+//     }
+//   }
+// }
 
 // Utility/Debugging method for dumping raw packet data
 void dump(const unsigned char *data, int length) {
@@ -104,3 +137,4 @@ void dump(const unsigned char *data, int length) {
   }
   pcount++;
 }
+ 
