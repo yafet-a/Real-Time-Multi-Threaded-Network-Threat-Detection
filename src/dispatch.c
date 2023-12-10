@@ -8,7 +8,7 @@
 
 
 //number of threads and a thread ID variable globally
-#define NUM_THREADS 4 
+#define NUM_THREADS 4
 pthread_t threads[NUM_THREADS];
 
 
@@ -123,7 +123,6 @@ void dispatch(struct pcap_pkthdr *header,
   // TODO: Your part 2 code here
   // This method should handle dispatching of work to threads. At present
   // it is a simple passthrough as this skeleton is single-threaded.
-  analyse(header, packet, verbose);
 
 
 

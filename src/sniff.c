@@ -63,6 +63,7 @@ void sniff(char *interface, int verbose) {
   }
   
   
+  
   // struct pcap_pkthdr header;
   // const unsigned char *packet;
 
@@ -71,23 +72,25 @@ void sniff(char *interface, int verbose) {
   // See the man pages of both pcap_loop() and pcap_next().
 
   int ret;
-  ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
-  if (ret < 0) {
-    fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
+ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
+if (ret < 0) {
+  fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
+  
     exit(1);
+
   }
 
   // Join threads to wait for completion
   for(int i = 0; i < NUM_THREADS; i++) {
-    pthread_join(threads[i], NULL); 
-  }
+    pthread_join(threads[i], NULL);
+}
 
   //set threads_done to true
-  threads_done = 1;
+  threads_done = 0;
   
-  pcap_close(pcap_handle);
+pcap_close(pcap_handle);
 
-  free(ip_list);
+  // free(ip_list);
 
 
 }

@@ -11,6 +11,8 @@
 #include <pthread.h>
 
 
+
+
 // Define MAX_IPS 
 #define MAX_IPS 100
 
@@ -160,30 +162,6 @@ void analyse(struct pcap_pkthdr *header,
 }
 
 
-// Print summary of SYN flood attack
-// void print_syn_summary() {
-//     int total_vios = bbc_count + google_count;
-//     int total_syn = 0;
-//     int unique_ips = 0;
-
-//     for (int i = 0; i < ip_count; i++) {
-//         total_syn += ip_list[i].count;
-//         if (ip_list[i].count > 0) {
-//             unique_ips++;
-//         }
-//     }
-
-//     printf("\n");
-//     printf("==============================\n");
-//     printf("Intrusion Detection Report\n");
-//     printf("Total SYN Packets: %d\n", total_syn);
-//     printf("Unique Source IPs: %d\n", unique_ips);
-//     printf("ARP Responses: %d (cache poisoning)\n", arp_responses);  
-//     // printf("Source IP: %s\n", inet_ntoa(src_ip));  
-//     printf("%d URL blacklist violations (%d google, %d bbc)\n", total_vios, google_count, bbc_count);
-//     printf("==============================\n");
-
-// }
 
 void print_syn_summary() {
 
@@ -205,16 +183,18 @@ void print_syn_summary() {
     snprintf(report, sizeof(report),  
     "==============================\n"
     "Intrusion Detection Report\n"
-    "Total SYN Packets: %d\n"
-    "Unique Source IPs: %d\n"
-    "ARP Responses: %d (cache poisoning)\n"
-    "%d URL blacklist violations (%d google, %d bbc)\n"
+    "Intrusion Detection Report\n"
+    "%d SYN packets detected from %d different IPs (syn attack)\n"
+    "%d ARP responses (cache poisoning)\n"
+    "%d URL Blacklist violations (%d google and %d bbc)\n"
     "==============================\n",
     total_syn, unique_ips, arp_responses, total_vios, google_count, bbc_count);
 
     write(1, report, strlen(report));
-    free(ip_list); 
+
     pthread_mutex_unlock(&analysis_mutex); 
+    free(ip_list); 
+
 
 
 }
