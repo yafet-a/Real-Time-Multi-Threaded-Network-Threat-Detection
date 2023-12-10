@@ -10,4 +10,6 @@ void analyse(struct pcap_pkthdr *header,
 
 void init();
 
+extern struct ip_address* ip_list;
+
 #endif

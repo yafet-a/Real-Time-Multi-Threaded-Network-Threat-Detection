@@ -19,6 +19,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 
   dispatch(header, packet, verbose);  
 }
+void init_ip_list();
 
 void print_syn_summary(void);
 
@@ -27,6 +28,8 @@ void sigint_handler(int signum) {
   print_syn_summary();
   exit(0);
 }
+
+
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
   
@@ -60,6 +63,11 @@ void sniff(char *interface, int verbose) {
     fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
     exit(1);
   }
+  
+  pcap_close(pcap_handle);
+
+  free(ip_list);
+
 
 }
 

@@ -176,28 +176,30 @@ void analyse(struct pcap_pkthdr *header,
 
 void print_syn_summary() {
 
-  char report[1024];
-  
-  int total_vios = bbc_count + google_count;
-  int total_syn = 0;
-  int unique_ips = 0;
+    char report[1024];
 
-  for (int i = 0; i < ip_count; i++) {
-      total_syn += ip_list[i].count;
-      if (ip_list[i].count > 0) {
-          unique_ips++;
-      }
-  }
+    int total_vios = bbc_count + google_count;
+    int total_syn = 0;
+    int unique_ips = 0;
 
-  snprintf(report, sizeof(report),  
-  "==============================\n"
-  "Intrusion Detection Report\n"
-  "Total SYN Packets: %d\n"
-  "Unique Source IPs: %d\n"
-  "ARP Responses: %d (cache poisoning)\n"
-  "%d URL blacklist violations (%d google, %d bbc)\n"
-  "==============================\n",
-  total_syn, unique_ips, arp_responses, total_vios, google_count, bbc_count);
+    for (int i = 0; i < ip_count; i++) {
+        total_syn += ip_list[i].count;
+        if (ip_list[i].count > 0) {
+            unique_ips++;
+        }
+    }
 
-  write(1, report, strlen(report));
+    snprintf(report, sizeof(report),  
+    "==============================\n"
+    "Intrusion Detection Report\n"
+    "Total SYN Packets: %d\n"
+    "Unique Source IPs: %d\n"
+    "ARP Responses: %d (cache poisoning)\n"
+    "%d URL blacklist violations (%d google, %d bbc)\n"
+    "==============================\n",
+    total_syn, unique_ips, arp_responses, total_vios, google_count, bbc_count);
+
+    write(1, report, strlen(report));
+    free(ip_list); 
+
 }
