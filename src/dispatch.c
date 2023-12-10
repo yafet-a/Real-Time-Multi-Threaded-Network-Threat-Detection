@@ -34,13 +34,19 @@ struct node* work_queue_tail = NULL;
 // Worker thread function 
 void* worker(void* arg) {
 
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGINT);
+
+  pthread_sigmask(SIG_BLOCK, &set, NULL);
+
   while(1) {
 
     // Lock mutex before accessing queue
     pthread_mutex_lock(&queue_mutex);
 
     // Check if work items in queue  (process)
-    while(work_queue_head != NULL) {
+    while(work_queue_head == NULL) {
       pthread_cond_wait(&cond, &queue_mutex);
     }
 

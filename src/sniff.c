@@ -6,8 +6,11 @@
 #include <netinet/if_ether.h>
 #include "analysis.h"
 #include "dispatch.h"
+#include <pthread.h>
+#include <unistd.h> // for sleep()
 
-
+//global flag to indicate when threads are done
+int threads_done = 0;
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
@@ -25,13 +28,23 @@ void print_syn_summary(void);
 
 // Signal handler 
 void sigint_handler(int signum) {
+  threads_done = 1;
+  printf("testing");
+  while(!threads_done){ //wait for threads to finish
+    sleep(1);
+  }
   print_syn_summary();
   exit(0);
 }
 
-
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
+
+  //create the threads
+  for(int i = 0; i < NUM_THREADS; i++) {
+    pthread_create(&threads[i], NULL, worker, NULL);
+  }
+
   
   // Register signal handler
   signal(SIGINT, sigint_handler);
@@ -63,6 +76,14 @@ void sniff(char *interface, int verbose) {
     fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
     exit(1);
   }
+
+  // Join threads to wait for completion
+  for(int i = 0; i < NUM_THREADS; i++) {
+    pthread_join(threads[i], NULL); 
+  }
+
+  //set threads_done to true
+  threads_done = 1;
   
   pcap_close(pcap_handle);
 
@@ -70,26 +91,6 @@ void sniff(char *interface, int verbose) {
 
 
 }
-
-//old using pcap_next
-//   while (1) {
-//     // Capture a  packet
-//     packet = pcap_next(pcap_handle, &header);
-//     if (packet == NULL) {
-//       // pcap_next can return null if no packet is seen within a timeout
-//       if (verbose) {
-//         printf("No packet received. %s\n", pcap_geterr(pcap_handle));
-//       }
-//     } else {
-//       // If verbose is set to 1, dump raw packet to terminal
-//       if (verbose) {
-//         dump(packet, header.len);
-//       }
-//       // Dispatch packet for processing
-//       dispatch(&header, packet, verbose);
-//     }
-//   }
-// }
 
 // Utility/Debugging method for dumping raw packet data
 void dump(const unsigned char *data, int length) {

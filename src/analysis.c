@@ -8,12 +8,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
+
 
 // Define MAX_IPS 
 #define MAX_IPS 100
 
 
 #define INITIAL_CAPACITY 100
+
+pthread_mutex_t analysis_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Struct to store IP address and number of SYN packets for that IP
 struct ip_address {
@@ -42,9 +46,14 @@ int bbc_count = 0;
 // Declare a variable to hold the number of ARP responses
 int arp_responses = 0;
 
+
 void analyse(struct pcap_pkthdr *header,
               const unsigned char *packet,
               int verbose) {
+
+    // Lock mutex before accessing queue
+    pthread_mutex_lock(&analysis_mutex);
+
 
     // Typecast packet contents to ether_header struct
     struct ether_header *eth_hdr = (struct ether_header *)packet;
@@ -146,6 +155,8 @@ void analyse(struct pcap_pkthdr *header,
             arp_responses++;
         }
     }
+    pthread_mutex_unlock(&analysis_mutex);
+
 }
 
 
@@ -176,6 +187,8 @@ void analyse(struct pcap_pkthdr *header,
 
 void print_syn_summary() {
 
+    pthread_mutex_lock(&analysis_mutex);
+
     char report[1024];
 
     int total_vios = bbc_count + google_count;
@@ -201,5 +214,7 @@ void print_syn_summary() {
 
     write(1, report, strlen(report));
     free(ip_list); 
+    pthread_mutex_unlock(&analysis_mutex); 
+
 
 }
