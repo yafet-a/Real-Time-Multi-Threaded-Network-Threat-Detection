@@ -12,6 +12,10 @@
 pthread_t threads[NUM_THREADS];
 
 
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;//condition variable for the queue
+pthread_mutex_t queue_mutex=PTHREAD_MUTEX_INITIALIZER;//define a mutex for access to the queue
+
+
 //create a global work queue (I'll use a linked list here):
 struct node {
   struct pcap_pkthdr *packet_header;
@@ -24,8 +28,7 @@ struct node* work_queue_head = NULL;
 struct node* work_queue_tail = NULL;
 
 
-//define a mutex for access to the queue
-pthread_mutex_t queue_mutex;
+
 
 
 // Worker thread function 
@@ -36,34 +39,34 @@ void* worker(void* arg) {
     // Lock mutex before accessing queue
     pthread_mutex_lock(&queue_mutex);
 
-    // Check if work items in queue  
-    if(work_queue_head != NULL) {
+    // Check if work items in queue  (process)
+    while(work_queue_head != NULL) {
+      pthread_cond_wait(&cond, &queue_mutex);
+    }
 
-      // Get work item from head of queue  
+      // Get work item from head of queue to dequeue it
       struct node* item = work_queue_head;    
-
-      // Remove from queue  
       work_queue_head = item->next;       
 
       if(work_queue_head == NULL) {
        work_queue_tail = NULL; 
       }
 
+
+      // Unlock mutex before processing work item
       pthread_mutex_unlock(&queue_mutex);
 
       // Process work item (packet)
       analyse(item->packet_header, item->packet_data, item->verbose); 
 
+      free(item);
 
-    } else {
-      // Unlock mutex if no work items   
-      pthread_mutex_unlock(&queue_mutex);
     }
 
   } 
    
 
-}
+
 
 void dispatch(struct pcap_pkthdr *header,
               const unsigned char *packet,
@@ -76,8 +79,9 @@ void dispatch(struct pcap_pkthdr *header,
   packet_item->packet_header = header;
   packet_item->packet_data = packet; 
   packet_item->verbose = verbose;
+  packet_item->next = NULL;
 
-  // Add node to queue
+  // Add packet (node) to queue
   pthread_mutex_lock(&queue_mutex);  
 
   if(work_queue_tail == NULL) {
@@ -88,7 +92,10 @@ void dispatch(struct pcap_pkthdr *header,
     work_queue_tail = packet_item;
   }
 
-  free(packet_item);
+  // free(packet_item);
+
+  pthread_cond_broadcast(&cond);
+
   pthread_mutex_unlock(&queue_mutex);
 
 
