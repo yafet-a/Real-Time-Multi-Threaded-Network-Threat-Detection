@@ -38,7 +38,9 @@ void sigint_handler(int signum) {
 
 void cleanup_threads(){
   for(int i = 0; i < NUM_THREADS; i++) {
-  pthread_join(threadpool[i], NULL);
+    pthread_join(threadpool[i], NULL);
+    printf("Thread %d joined\n", i);  
+
   }
 }
 
@@ -60,10 +62,9 @@ void sniff(char *interface, int verbose) {
   
 
     //create the threads
-  for(int i = 0; i < NUM_THREADS; i++) {  
-    printf("Creating thread %d\n", i);
-    pthread_create(&threadpool[i], NULL, worker, NULL);
-  }
+    init_threadpool();
+    printf("Sniff (main thread): Created threads\n");
+  
 
   
   // Register signal handler
@@ -90,6 +91,8 @@ void sniff(char *interface, int verbose) {
     // Join threads to wait for completion
     cleanup_threads();
     pcap_close(pcap_handle);
+    // pcap_cleanup(pcap_handle);
+
 
     }
 

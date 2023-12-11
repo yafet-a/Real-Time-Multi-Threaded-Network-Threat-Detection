@@ -53,7 +53,7 @@ void analyse(struct pcap_pkthdr *header,
               const unsigned char *packet,
               int verbose) {
 
-    // usleep(1000);//its fine
+    usleep(1000);//its fine (encourages contention)
     // Lock mutex before accessing queue
     pthread_mutex_lock(&analysis_mutex);
 

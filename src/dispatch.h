@@ -1,6 +1,6 @@
 #ifndef CS241_DISPATCH_H
 #define CS241_DISPATCH_H
-#define NUM_THREADS 3
+#define NUM_THREADS 5
 #include <pcap.h>
 
 void dispatch(const struct pcap_pkthdr *header, 
@@ -10,5 +10,7 @@ void dispatch(const struct pcap_pkthdr *header,
 extern pthread_t threadpool[NUM_THREADS];
 
 void* worker(void* arg);
+
+void init_threadpool();
 
 #endif
