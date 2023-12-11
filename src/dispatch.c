@@ -102,5 +102,5 @@ void dispatch(struct pcap_pkthdr *header,
   pthread_cond_broadcast(&cond);
 
   pthread_mutex_unlock(&queue_mutex);
-
+  
 }
