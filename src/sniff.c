@@ -12,8 +12,6 @@
 //global flag to indicate when threads are done
 int threads_done = 0;
 
-pcap_t *pcap_handle;
-
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
   int verbose = *(int*)args;
@@ -31,36 +29,26 @@ void print_syn_summary(void);
 // Signal handler 
 void sigint_handler(int signum) {
   threads_done = 1;
-  // pcap_breakloop(pcap_handle);
-  printf("testing");
-  while(!threads_done){ //wait for threads to finish
-    sleep(1);
-  }
+  // while(!threads_done){ //wait for threads to finish
+  //   sleep(1);
+  // }
   print_syn_summary();
   exit(0);
 }
 
+
+
+
 void cleanup_threads(){
   for(int i = 0; i < NUM_THREADS; i++) {
-  pthread_join(threads[i], NULL);
+  pthread_join(threadpool[i], NULL);
   }
 }
-
-
 
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
 
-  //create the threads
-  for(int i = 0; i < NUM_THREADS; i++) {
-    pthread_create(&threads[i], NULL, worker, NULL);
-  }
 
-  
-  // Register signal handler
-  signal(SIGINT, sigint_handler);
-  init_ip_list();
-  
   char errbuf[PCAP_ERRBUF_SIZE];
 
   // Open the specified network interface for packet capture. pcap_open_live() returns the handle to be used for the packet
@@ -73,33 +61,46 @@ void sniff(char *interface, int verbose) {
     printf("SUCCESS! Opened %s for capture\n", interface);
   }
   
+
+    //create the threads
+  for(int i = 0; i < NUM_THREADS; i++) {
+printf("Creating thread %d\n", i);
+    pthread_create(&threadpool[i], NULL, worker, NULL);
+  }
+
+  
+  // Register signal handler
+  signal(SIGINT, sigint_handler);
+  init_ip_list();
+  
+
   // struct pcap_pkthdr header;
   // const unsigned char *packet;
 
   // Capture packet one packet everytime the loop runs using pcap_next(). This is inefficient.
   // A more efficient way to capture packets is to use use pcap_loop() instead of pcap_next().
   // See the man pages of both pcap_loop() and pcap_next().
-
-int ret;
+  
+  int ret;
 ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
 if (ret < 0) {
+    
+fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
+    exit(1);
+}
 
-  fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
-  exit(1);
+if (pcap_handle != NULL){
+  // Join threads to wait for completion
+  // cleanup_threads();
+  pcap_close(pcap_handle);
+
   }
 
-  if (pcap_handle != NULL){
-    // Join threads to wait for completion
-    cleanup_threads();
-    pcap_close(pcap_handle);
+// pcap_cleanup(pcap_handle);
 
-  }
+//set threads_done to true
+    threads_done = 1;
 
-  // pcap_cleanup(pcap_handle);
-  
-  //set threads_done to true
-  threads_done = 1;
-  
 }
 
 // Utility/Debugging method for dumping raw packet data
@@ -156,4 +157,3 @@ void dump(const unsigned char *data, int length) {
   }
   pcount++;
 }
- 
