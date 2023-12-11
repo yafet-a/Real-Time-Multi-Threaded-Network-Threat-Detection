@@ -13,6 +13,7 @@
 
 
 
+
 // Define MAX_IPS 
 #define MAX_IPS 100
 
@@ -53,9 +54,12 @@ void analyse(struct pcap_pkthdr *header,
               const unsigned char *packet,
               int verbose) {
 
-    usleep(1000);//its fine (encourages contention)
+    // usleep(1000);//its fine (encourages contention)
     // Lock mutex before accessing queue
+    printf("Thread %ld trying to lock mutex\n", pthread_self());
     pthread_mutex_lock(&analysis_mutex);
+    printf("Thread %ld locked mutex\n", pthread_self());
+
 
 
     // Typecast packet contents to ether_header struct
