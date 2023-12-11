@@ -12,6 +12,8 @@
 //global flag to indicate when threads are done
 int threads_done = 0;
 
+pcap_t *pcap_handle;
+
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
   int verbose = *(int*)args;
@@ -29,6 +31,7 @@ void print_syn_summary(void);
 // Signal handler 
 void sigint_handler(int signum) {
   threads_done = 1;
+  // pcap_breakloop(pcap_handle);
   printf("testing");
   while(!threads_done){ //wait for threads to finish
     sleep(1);
@@ -36,6 +39,14 @@ void sigint_handler(int signum) {
   print_syn_summary();
   exit(0);
 }
+
+void cleanup_threads(){
+  for(int i = 0; i < NUM_THREADS; i++) {
+  pthread_join(threads[i], NULL);
+  }
+}
+
+
 
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
@@ -62,8 +73,6 @@ void sniff(char *interface, int verbose) {
     printf("SUCCESS! Opened %s for capture\n", interface);
   }
   
-  
-  
   // struct pcap_pkthdr header;
   // const unsigned char *packet;
 
@@ -71,28 +80,26 @@ void sniff(char *interface, int verbose) {
   // A more efficient way to capture packets is to use use pcap_loop() instead of pcap_next().
   // See the man pages of both pcap_loop() and pcap_next().
 
-  int ret;
+int ret;
 ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
 if (ret < 0) {
+
   fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
-  
-    exit(1);
+  exit(1);
+  }
+
+  if (pcap_handle != NULL){
+    // Join threads to wait for completion
+    cleanup_threads();
+    pcap_close(pcap_handle);
 
   }
 
-  // Join threads to wait for completion
-  for(int i = 0; i < NUM_THREADS; i++) {
-    pthread_join(threads[i], NULL);
-}
-
-  //set threads_done to true
-  threads_done = 0;
+  // pcap_cleanup(pcap_handle);
   
-pcap_close(pcap_handle);
-
-  // free(ip_list);
-
-
+  //set threads_done to true
+  threads_done = 1;
+  
 }
 
 // Utility/Debugging method for dumping raw packet data
