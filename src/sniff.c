@@ -36,9 +36,6 @@ void sigint_handler(int signum) {
   exit(0);
 }
 
-
-
-
 void cleanup_threads(){
   for(int i = 0; i < NUM_THREADS; i++) {
   pthread_join(threadpool[i], NULL);
@@ -63,8 +60,8 @@ void sniff(char *interface, int verbose) {
   
 
     //create the threads
-  for(int i = 0; i < NUM_THREADS; i++) {
-printf("Creating thread %d\n", i);
+  for(int i = 0; i < NUM_THREADS; i++) {  
+    printf("Creating thread %d\n", i);
     pthread_create(&threadpool[i], NULL, worker, NULL);
   }
 
@@ -82,19 +79,19 @@ printf("Creating thread %d\n", i);
   // See the man pages of both pcap_loop() and pcap_next().
   
   int ret;
-ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
-if (ret < 0) {
-    
-fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
-    exit(1);
-}
-
-if (pcap_handle != NULL){
-  // Join threads to wait for completion
-  // cleanup_threads();
-  pcap_close(pcap_handle);
-
+  ret = pcap_loop(pcap_handle, -1, got_packet, (u_char*)&verbose);  
+  if (ret < 0) {
+      
+  fprintf(stderr, "Error from pcap_loop: %s\n", pcap_geterr(pcap_handle));
+      exit(1);
   }
+
+  if (pcap_handle != NULL){
+    // Join threads to wait for completion
+    cleanup_threads();
+    pcap_close(pcap_handle);
+
+    }
 
 // pcap_cleanup(pcap_handle);
 
