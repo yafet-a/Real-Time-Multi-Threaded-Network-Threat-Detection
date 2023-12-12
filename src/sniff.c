@@ -63,7 +63,7 @@ void sniff(char *interface, int verbose) {
 
     //create the threads
   for(int i = 0; i < NUM_THREADS; i++) {  
-    printf("Creating thread %d\n", i);
+    // printf("Creating thread %d\n", i);
     pthread_create(&threadpool[i], NULL, worker, NULL);
   }
 

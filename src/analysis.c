@@ -160,7 +160,6 @@ void analyse(struct pcap_pkthdr *header,
 }
 
 
-
 void print_syn_summary() {
 
     pthread_mutex_lock(&analysis_mutex);

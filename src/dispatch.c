@@ -13,8 +13,7 @@ pthread_t threadpool[NUM_THREADS];
 
 
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;//condition variable for the queue
-pthread_mutex_t dequeue_mutex=PTHREAD_MUTEX_INITIALIZER;//define a mutex for access to the queue
-pthread_mutex_t enqueue_mutex=PTHREAD_MUTEX_INITIALIZER;//enqueing lock
+pthread_mutex_t lock_mutex=PTHREAD_MUTEX_INITIALIZER;//define a mutex for access to the queue
 
 
 //Linked list node
@@ -32,20 +31,20 @@ struct node* work_queue_tail = NULL;
 // Worker thread function 
 void* worker(void* arg) {
 
-  sigset_t set;
+sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGINT);
 
   pthread_sigmask(SIG_BLOCK, &set, NULL);
-
+  
   while(1) {
 
     // Lock mutex before accessing queue
-    pthread_mutex_lock(&dequeue_mutex);
+    pthread_mutex_lock(&lock_mutex);
 
     // Check if work items in queue  (process)
     while(work_queue_head == NULL) {
-      pthread_cond_wait(&cond, &dequeue_mutex);
+      pthread_cond_wait(&cond, &lock_mutex);
     }
 
       // Get work item from head of queue to dequeue it
@@ -60,7 +59,7 @@ void* worker(void* arg) {
 
 
       // Unlock mutex before processing work item
-      pthread_mutex_unlock(&dequeue_mutex);
+      pthread_mutex_unlock(&lock_mutex);
 
       // Process work item (packet)
       analyse(item->packet_header, item->packet_data, item->verbose); 
@@ -86,7 +85,7 @@ void dispatch(struct pcap_pkthdr *header,
   
 
   // Add packet (node) to queue
-  pthread_mutex_lock(&enqueue_mutex);  
+  pthread_mutex_lock(&lock_mutex);  
 
   if(work_queue_tail == NULL) {
     work_queue_head = packet_item;
@@ -100,6 +99,6 @@ void dispatch(struct pcap_pkthdr *header,
 
   pthread_cond_broadcast(&cond);
 
-  pthread_mutex_unlock(&enqueue_mutex);
-  
+  pthread_mutex_unlock(&lock_mutex);
+
 }
