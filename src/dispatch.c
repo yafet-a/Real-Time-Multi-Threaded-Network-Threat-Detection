@@ -12,13 +12,12 @@
 pthread_t threadpool[NUM_THREADS];
 
 
-
-
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;//condition variable for the queue
-pthread_mutex_t queue_mutex=PTHREAD_MUTEX_INITIALIZER;//define a mutex for access to the queue
+pthread_mutex_t dequeue_mutex=PTHREAD_MUTEX_INITIALIZER;//define a mutex for access to the queue
+pthread_mutex_t enqueue_mutex=PTHREAD_MUTEX_INITIALIZER;//enqueing lock
 
 
-//create a global work queue (I'll use a linked list here):
+//Linked list node
 struct node {
   struct pcap_pkthdr *packet_header;
   const unsigned char *packet_data;
@@ -42,11 +41,11 @@ void* worker(void* arg) {
   while(1) {
 
     // Lock mutex before accessing queue
-    pthread_mutex_lock(&queue_mutex);
+    pthread_mutex_lock(&dequeue_mutex);
 
     // Check if work items in queue  (process)
     while(work_queue_head == NULL) {
-      pthread_cond_wait(&cond, &queue_mutex);
+      pthread_cond_wait(&cond, &dequeue_mutex);
     }
 
       // Get work item from head of queue to dequeue it
@@ -61,7 +60,7 @@ void* worker(void* arg) {
 
 
       // Unlock mutex before processing work item
-      pthread_mutex_unlock(&queue_mutex);
+      pthread_mutex_unlock(&dequeue_mutex);
 
       // Process work item (packet)
       analyse(item->packet_header, item->packet_data, item->verbose); 
@@ -87,7 +86,7 @@ void dispatch(struct pcap_pkthdr *header,
   
 
   // Add packet (node) to queue
-  pthread_mutex_lock(&queue_mutex);  
+  pthread_mutex_lock(&enqueue_mutex);  
 
   if(work_queue_tail == NULL) {
     work_queue_head = packet_item;
@@ -101,6 +100,6 @@ void dispatch(struct pcap_pkthdr *header,
 
   pthread_cond_broadcast(&cond);
 
-  pthread_mutex_unlock(&queue_mutex);
+  pthread_mutex_unlock(&enqueue_mutex);
   
 }

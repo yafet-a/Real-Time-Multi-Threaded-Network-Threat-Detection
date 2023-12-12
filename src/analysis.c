@@ -188,7 +188,6 @@ void print_syn_summary() {
     snprintf(report, sizeof(report),  
     "==============================\n"
     "Intrusion Detection Report\n"
-    "Intrusion Detection Report\n"
     "%d SYN packets detected from %d different IPs (syn attack)\n"
     "%d ARP responses (cache poisoning)\n"
     "%d URL Blacklist violations (%d google and %d bbc)\n"

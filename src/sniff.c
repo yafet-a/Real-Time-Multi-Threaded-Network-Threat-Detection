@@ -12,6 +12,8 @@
 //global flag to indicate when threads are done
 int threads_done = 0;
 
+
+
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
   int verbose = *(int*)args;
@@ -42,6 +44,7 @@ void cleanup_threads(){
   }
 }
 
+
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
 
@@ -65,12 +68,10 @@ void sniff(char *interface, int verbose) {
     pthread_create(&threadpool[i], NULL, worker, NULL);
   }
 
-  
   // Register signal handler
   signal(SIGINT, sigint_handler);
   init_ip_list();
   
-
   // struct pcap_pkthdr header;
   // const unsigned char *packet;
 

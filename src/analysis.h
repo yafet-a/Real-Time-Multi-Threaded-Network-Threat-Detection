@@ -8,7 +8,7 @@ void analyse(struct pcap_pkthdr *header,
               int verbose);
 
 
-void init();
+void init_ip_list();
 
 extern struct ip_address* ip_list;
 

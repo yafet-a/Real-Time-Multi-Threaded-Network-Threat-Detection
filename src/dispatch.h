@@ -11,8 +11,8 @@ extern pthread_t threadpool[NUM_THREADS];
 
 void* worker(void* arg);
 
-void init_threadpool();
+// void init_threadpool();
 
-extern int all_packets_processed;
+// extern int all_packets_processed;
 
 #endif
