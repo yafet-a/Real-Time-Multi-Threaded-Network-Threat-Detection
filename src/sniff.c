@@ -44,7 +44,6 @@ void cleanup_threads(){
   }
 }
 
-
 // Application main sniffing loop
 void sniff(char *interface, int verbose) {
 
